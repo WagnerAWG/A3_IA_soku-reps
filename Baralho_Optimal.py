@@ -10,7 +10,7 @@ import random
 random.seed(42)
 np.random.seed(42)
 
-# 1. CARREGAR DADOS
+# 1 - CARREGAR DADOS
 print("Carregando dados...")
 df = pd.read_csv('data.csv')
 
@@ -20,7 +20,7 @@ print(f"Partidas com ambos ELO >= 1600: {len(df_filtered)}")
 
 df_filtered['winner_binary'] = (df_filtered['winner'] == -1).astype(int)
 
-# 2. FEATURE ENGINEERING
+# 2 - FEATURE ENGINEERING
 ALL_CARD_IDS = sorted(
     {c for cards_set in CHAR_CARDS.values() for c in cards_set}
 )
@@ -66,7 +66,7 @@ y = np.array(y_rows)
 
 print(f"Exemplos de treinamento: {len(X)}")
 
-# 3. TREINAR MODELO
+# 3 - TREINAR MODELO
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
@@ -76,7 +76,7 @@ y_pred = model.predict(X_test)
 acc = accuracy_score(y_test, y_pred)
 print(f"Acuracia do modelo: {acc:.4f}")
 
-# 4. ALGORITMO GENETICO
+# 4 - ALGORITMO GENETICO
 
 POP_SIZE = 100
 GENERATIONS = 50
@@ -152,17 +152,6 @@ def tournament_select(decks, scores, k=TOURNAMENT_K):
 def crossover(p1, p2):
     child = [p1[i] if random.random() < 0.5 else p2[i] for i in range(20)]
     return child
-
-
-def mutate(deck, char_id):
-    available = sorted(CHAR_CARDS[char_id])
-    for i in range(20):
-        if random.random() < MUTATION_RATE / 20:
-            old = deck[i]
-            candidates = [c for c in available if c != old]
-            if candidates:
-                deck[i] = random.choice(candidates)
-    return deck
 
 
 print("\n" + "=" * 70)

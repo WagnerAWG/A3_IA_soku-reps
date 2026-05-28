@@ -1,0 +1,3 @@
+05a_selcha - "splash art" da tela de seleção de personagem, .png
+09b_character - "splash art" da hud dentro das partidas, .png
+card - nome, id, imagem .pgn de cada carta

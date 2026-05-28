@@ -6,13 +6,13 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from game_data import CHARACTERS
 
+# 1 - CARREGAR DADOS
 df = pd.read_csv('data.csv')
-
 
 df['winner_binary'] = (df['winner'] == -1).astype(int)
 y = df['winner_binary']
 
-
+# 2 - FEATURE ENGINEERING
 mask = (df['serverUserElo'] >= 1600) & (df['clientUserElo'] >= 1600)
 high_elo = df[mask]
 
@@ -44,7 +44,7 @@ cols = [
 
 x = df[cols]
 
-
+# 3 - TREINAR MODELO
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=100)
 
 
@@ -59,23 +59,22 @@ print(model.score(x_test, y_test))
 print(classification_report(y_test, y_pred))
 
 
-# Prediction helper function
+# 4 - FUNCAO DE PREDICAO
 def predict_match_winner(server_rank, client_rank, server_char, client_char):
     """
-    Predict the match winner based on ranks and characters.
-    
+    Preve o vencedor da partida com base no ELO e personagens.
+
     Args:
-        server_rank: Server player ELO ranking (numeric)
-        client_rank: Client player ELO ranking (numeric)
-        server_char: Server character ID (0-19)
-        client_char: Client character ID (0-19)
-    
+        server_rank: ELO do jogador servidor
+        client_rank: ELO do jogador cliente
+        server_char: ID do personagem do servidor (0-19)
+        client_char: ID do personagem do cliente (0-19)
+
     Returns:
-        dict with 'winner' (1 for server, 0 for client) and 'probability'
+        dict com 'winner' ('server' ou 'client') e probabilidades
     """
     default_strength = sum(character_strength.values()) / len(character_strength)
-    
-    # Create feature array matching the training format
+
     server_char_strength = character_strength.get(server_char, default_strength)
     client_char_strength = character_strength.get(client_char, default_strength)
     
@@ -91,101 +90,100 @@ def predict_match_winner(server_rank, client_rank, server_char, client_char):
     }
 
 
-# ===== TEST CASES WITH SPECIFIC FEATURE VALUES =====
+# 5 - CASOS DE TESTE
 print("\n" + "="*60)
-print("TEST CASES: AI PREDICTIONS WITH SPECIFIC FEATURE VALUES")
+print("CASOS DE TESTE: PREDICOES DA IA")
 print("="*60)
 
 test_cases = [
     {
-        'name': 'Test 1: Server stronger (rank & character)',
+        'name': 'Teste 1: Servidor mais forte (ELO e personagem)',
         'server_rank': 1700,
         'client_rank': 1500,
-        'server_char': 13,  # Strength 10 (best WR=78.29%)
-        'client_char': 10,  # Strength 1 (worst WR=30.32%)
+        'server_char': 13,
+        'client_char': 10,
     },
     {
-        'name': 'Test 2: Client stronger (rank & character)',
+        'name': 'Teste 2: Cliente mais forte (ELO e personagem)',
         'server_rank': 1400,
         'client_rank': 1800,
-        'server_char': 10,  # Strength 1 (worst)
-        'client_char': 13,  # Strength 10 (best)
+        'server_char': 10,
+        'client_char': 13,
     },
     {
-        'name': 'Test 3: Same rank, server character stronger',
+        'name': 'Teste 3: Mesmo ELO, personagem do servidor mais forte',
         'server_rank': 1600,
         'client_rank': 1600,
-        'server_char': 5,   # Strength 7 (strong, WR=64.82%)
-        'client_char': 2,   # Strength 2 (weak, WR=36.00%)
+        'server_char': 5,
+        'client_char': 2,
     },
     {
-        'name': 'Test 4: Same rank, client character stronger',
+        'name': 'Teste 4: Mesmo ELO, personagem do cliente mais forte',
         'server_rank': 1600,
         'client_rank': 1600,
-        'server_char': 2,   # Strength 2 (weak)
-        'client_char': 5,   # Strength 7 (strong)
+        'server_char': 2,
+        'client_char': 5,
     },
     {
-        'name': 'Test 5: Server rank advantage vs client character advantage',
+        'name': 'Teste 5: Vantagem de ELO do servidor vs vantagem de personagem do cliente',
         'server_rank': 1750,
         'client_rank': 1550,
-        'server_char': 7,   # Strength 5 (average, WR=51.50%)
-        'client_char': 13,  # Strength 10 (best)
+        'server_char': 7,
+        'client_char': 13,
     },
     {
-        'name': 'Test 6: Evenly matched (same rank, same strength characters)',
+        'name': 'Teste 6: Equilibrado (mesmo ELO, personagens de forca similar)',
         'server_rank': 1650,
         'client_rank': 1650,
-        'server_char': 1,   # Strength 5 (WR=52.89%)
-        'client_char': 7,   # Strength 5 (WR=51.50%)
+        'server_char': 1,
+        'client_char': 7,
     },
     {
-        'name': 'Test 7: Low rank vs high rank (same character)',
+        'name': 'Teste 7: ELO baixo vs ELO alto (mesmo personagem)',
         'server_rank': 1200,
         'client_rank': 1900,
-        'server_char': 5,   # Strength 7 (same character)
-        'client_char': 5,   # Strength 7 (same character)
+        'server_char': 5,
+        'client_char': 5,
     },
     {
-        'name': 'Test 8: High rank weak character vs low rank strong character',
+        'name': 'Teste 8: ELO alto + personagem fraco vs ELO baixo + personagem forte',
         'server_rank': 1800,
         'client_rank': 1200,
-        'server_char': 10,  # Strength 1 (worst)
-        'client_char': 13,  # Strength 10 (best)
+        'server_char': 10,
+        'client_char': 13,
     },
     {
-        'name': 'Test 9: Extreme rank diff + worst vs best character',
+        'name': 'Teste 9: Diferenca extrema de ELO + pior vs melhor personagem',
         'server_rank': 2800,
         'client_rank': 800,
-        'server_char': 10,  # Strength 1 (worst)
-        'client_char': 13,  # Strength 10 (best)
+        'server_char': 10,
+        'client_char': 13,
     },
     {
-        'name': 'Test 10: Inverse extreme rank diff + best vs worst character',
+        'name': 'Teste 10: Diferenca extrema inversa + melhor vs pior personagem',
         'server_rank': 800,
         'client_rank': 3200,
-        'server_char': 13,  # Strength 10 (best)
-        'client_char': 10,  # Strength 1 (worst)
+        'server_char': 13,
+        'client_char': 10,
     },
 ]
 
-# Run all test cases
 for test in test_cases:
     s_name = CHARACTERS.get(test['server_char'], f"Char {test['server_char']}")
     c_name = CHARACTERS.get(test['client_char'], f"Char {test['client_char']}")
     print(f"\n{test['name']}")
-    print(f"  Server: Rank {test['server_rank']}, {s_name} (ID {test['server_char']})")
-    print(f"  Client: Rank {test['client_rank']}, {c_name} (ID {test['client_char']})")
-    
+    print(f"  Servidor: ELO {test['server_rank']}, {s_name} (ID {test['server_char']})")
+    print(f"  Cliente: ELO {test['client_rank']}, {c_name} (ID {test['client_char']})")
+
     result = predict_match_winner(
         test['server_rank'],
         test['client_rank'],
         test['server_char'],
         test['client_char']
     )
-    
-    print(f"  → PREDICTION: {result['winner'].upper()} wins")
-    print(f"    - Server win probability: {result['server_win_probability']:.2%}")
-    print(f"    - Client win probability: {result['client_win_probability']:.2%}")
+
+    print(f"  -> PREDICAO: {result['winner'].upper()} vence")
+    print(f"    - Prob. vitoria do servidor: {result['server_win_probability']:.2%}")
+    print(f"    - Prob. vitoria do cliente: {result['client_win_probability']:.2%}")
 
 print("\n" + "="*60)
