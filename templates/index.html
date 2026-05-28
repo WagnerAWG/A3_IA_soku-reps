@@ -1,0 +1,181 @@
+﻿<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hisōtensoku Battle UI</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero card">
+        <div class="hero-copy">
+          <span class="hero-label">Touhou Hisōtensoku</span>
+          <h1>Predict API com Tela de Batalha</h1>
+          <p>
+            Personagens em alta resolução com preview de cards de habilidade e
+            matchup visual inspirado em select screen.
+          </p>
+        </div>
+        <div class="hero-preview">
+          <div class="preview-card">
+            <img
+              id="preview-server-splash"
+              src="/character-image/0"
+              alt="Servidor"
+            />
+            <div class="preview-label">Servidor</div>
+            <div class="preview-name" id="preview-server-name">
+              Reimu Hakurei
+            </div>
+          </div>
+          <div class="battle-vs large">VS</div>
+          <div class="preview-card">
+            <img
+              id="preview-client-splash"
+              src="/character-image/1"
+              alt="Cliente"
+            />
+            <div class="preview-label">Cliente</div>
+            <div class="preview-name" id="preview-client-name">
+              Marisa Kirisame
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid-card">
+        <div class="form-panel card">
+          <h2>Configuração de Match</h2>
+          <div class="field-row">
+            <label for="server_rank">ELO do Servidor</label>
+            <input
+              id="server_rank"
+              name="server_rank"
+              type="number"
+              min="0"
+              value="1500"
+            />
+          </div>
+          <div class="field-row">
+            <label for="client_rank">ELO do Cliente</label>
+            <input
+              id="client_rank"
+              name="client_rank"
+              type="number"
+              min="0"
+              value="1500"
+            />
+          </div>
+          <div class="field-row">
+            <label for="server_char">Personagem do Servidor</label>
+            <select id="server_char" name="server_char"></select>
+          </div>
+          <div class="field-row">
+            <label for="client_char">Personagem do Cliente</label>
+            <select id="client_char" name="client_char"></select>
+          </div>
+          <button id="submit-button" type="button" class="btn-primary">
+            Prever vencedor
+          </button>
+        </div>
+
+        <aside class="preview-panel card">
+          <div class="preview-heading">
+            <h2>Preview de Personagens</h2>
+            <p>
+              Escolha o seu personagem e veja as cartas de habilidade/encanto.
+            </p>
+          </div>
+          <div class="character-panel-grid">
+            <div class="character-panel">
+              <span class="character-role-label">Servidor</span>
+              <div class="character-card">
+                <img
+                  id="server-image"
+                  src="/character-image/0"
+                  alt="Servidor"
+                />
+                <div class="character-name" id="server-name">Reimu Hakurei</div>
+              </div>
+            </div>
+            <div class="character-panel">
+              <span class="character-role-label">Cliente</span>
+              <div class="character-card">
+                <img id="client-image" src="/character-image/1" alt="Cliente" />
+                <div class="character-name" id="client-name">
+                  Marisa Kirisame
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cards-section">
+            <div class="cards-column">
+              <h3>Cartas do Servidor</h3>
+              <div class="cards-grid" id="server-cards"></div>
+            </div>
+            <div class="cards-column">
+              <h3>Cartas do Cliente</h3>
+              <div class="cards-grid" id="client-cards"></div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="card result-card" id="result-card" hidden>
+        <h2>Resultado da Partida</h2>
+        <div class="matchup-banner">
+          <div class="matchup-card">
+            <img
+              id="matchup-server-img"
+              src="/select-splash/0"
+              alt="Servidor"
+            />
+            <div id="matchup-server-name">Reimu Hakurei</div>
+          </div>
+          <div class="battle-vs small">VS</div>
+          <div class="matchup-card">
+            <img id="matchup-client-img" src="/select-splash/1" alt="Cliente" />
+            <div id="matchup-client-name">Marisa Kirisame</div>
+          </div>
+        </div>
+
+        <div class="result-grid">
+          <div>
+            <p class="result-label">Vencedor</p>
+            <strong id="winner-text"></strong>
+          </div>
+          <div>
+            <p class="result-label">Servidor</p>
+            <strong id="server-prob"></strong>
+          </div>
+          <div>
+            <p class="result-label">Cliente</p>
+            <strong id="client-prob"></strong>
+          </div>
+          <div>
+            <p class="result-label">Matchup</p>
+            <strong id="matchup-indicator"></strong>
+          </div>
+          <div>
+            <p class="result-label">Modelo</p>
+            <strong id="model-type"></strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="card info-card">
+        <h2>Como funciona</h2>
+        <p>
+          O frontend envia a configuração de ELO e personagem para o backend
+          Flask. O backend usa um modelo treinado se houver
+          <code>data.csv</code>, caso contrário utiliza um fallback simples para
+          prever o vencedor.
+        </p>
+      </section>
+    </div>
+
+    <script src="/static/js/predict.js"></script>
+  </body>
+</html>
