@@ -19,6 +19,8 @@ const matchupIndicator = document.getElementById('matchup-indicator')
 const modelTypeText = document.getElementById('model-type')
 const serverCards = document.getElementById('server-cards')
 const clientCards = document.getElementById('client-cards')
+const serverOptimizedDeck = document.getElementById('server-optimized-deck')
+const clientOptimizedDeck = document.getElementById('client-optimized-deck')
 
 let charactersList = []
 
@@ -94,16 +96,22 @@ async function updatePreviews() {
   const server = getCharacterById(serverChar.value)
   const client = getCharacterById(clientChar.value)
 
+  const updateTasks = []
+
   if (server) {
     serverName.textContent = server.name
     serverImage.src = `/character-image/${server.id}`
     serverImage.alt = server.name
     previewServerSplash.src = `/character-image/${server.id}`
     previewServerSplash.alt = `${server.name} splash`
+    document.getElementById('preview-server-name').textContent = server.name
     matchupServerImg.src = `/select-splash/${server.id}`
     matchupServerImg.alt = `${server.name} splash`
     matchupServerName.textContent = server.name
-    await updateCardGrid(server.id, serverCards)
+    updateTasks.push(updateCardGrid(server.id, serverCards))
+    loadOptimizedDeck(server.id, serverOptimizedDeck).catch(() => {
+      renderDeck([], serverOptimizedDeck)
+    })
   }
 
   if (client) {
@@ -112,11 +120,17 @@ async function updatePreviews() {
     clientImage.alt = client.name
     previewClientSplash.src = `/character-image/${client.id}`
     previewClientSplash.alt = `${client.name} splash`
+    document.getElementById('preview-client-name').textContent = client.name
     matchupClientImg.src = `/select-splash/${client.id}`
     matchupClientImg.alt = `${client.name} splash`
     matchupClientName.textContent = client.name
-    await updateCardGrid(client.id, clientCards)
+    updateTasks.push(updateCardGrid(client.id, clientCards))
+    loadOptimizedDeck(client.id, clientOptimizedDeck).catch(() => {
+      renderDeck([], clientOptimizedDeck)
+    })
   }
+
+  await Promise.all(updateTasks)
 }
 
 function getMatchupIndicator(probability) {
@@ -127,6 +141,44 @@ function getMatchupIndicator(probability) {
     return 'Advantage Client'
   }
   return 'Neutral'
+}
+
+function renderDeck(deck, container) {
+  container.innerHTML = ''
+  if (!Array.isArray(deck) || !deck.length) {
+    const empty = document.createElement('div')
+    empty.className = 'empty-cards'
+    empty.textContent = 'Baralho otimizado não disponível.'
+    container.appendChild(empty)
+    return
+  }
+
+  const list = document.createElement('ul')
+  list.className = 'deck-list-items'
+  deck.forEach((card) => {
+    const item = document.createElement('li')
+    item.textContent = `${card.count}× ${card.name}`
+    list.appendChild(item)
+  })
+  container.appendChild(list)
+}
+
+async function loadOptimizedDeck(charId, container) {
+  if (!charId || !container) {
+    return
+  }
+
+  container.innerHTML = '<p class="deck-loading">Carregando baralho otimizado...</p>'
+
+  const response = await fetch(`/api/optimized-deck/${charId}`)
+  if (!response.ok) {
+    container.innerHTML = ''
+    renderDeck([], container)
+    return
+  }
+
+  const data = await response.json()
+  renderDeck(data.deck || [], container)
 }
 
 function showResult(result) {
@@ -143,31 +195,64 @@ function showResult(result) {
 
 form.addEventListener('click', async (event) => {
   event.preventDefault()
-  await updatePreviews()
+  form.disabled = true
 
-  const payload = {
-    server_rank: Number(document.getElementById('server_rank').value),
-    client_rank: Number(document.getElementById('client_rank').value),
-    server_char: Number(serverChar.value),
-    client_char: Number(clientChar.value),
+  try {
+    const server = getCharacterById(serverChar.value)
+    const client = getCharacterById(clientChar.value)
+
+    if (!server || !client) {
+      alert('Selecione personagens válidos.')
+      return
+    }
+
+    updatePreviews()
+
+    const payload = {
+      server_rank: Number(document.getElementById('server_rank').value),
+      client_rank: Number(document.getElementById('client_rank').value),
+      server_char: Number(serverChar.value),
+      client_char: Number(clientChar.value),
+    }
+
+    const response = await fetch('/api/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    const data = await response.json()
+    if (!response.ok) {
+      alert(data.error || 'Erro ao calcular previsão.')
+      return
+    }
+
+    showResult(data)
+  } catch (error) {
+    console.error('Erro na previsão:', error)
+    alert('Erro ao processar previsão. Tente novamente.')
+  } finally {
+    form.disabled = false
   }
-
-  const response = await fetch('/api/predict', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-
-  const data = await response.json()
-  if (!response.ok) {
-    alert(data.error || 'Erro ao calcular previsão.')
-    return
-  }
-
-  showResult(data)
 })
 
-serverChar.addEventListener('change', updatePreviews)
-clientChar.addEventListener('change', updatePreviews)
+serverChar.addEventListener('change', async () => {
+  try {
+    await updatePreviews()
+  } catch (error) {
+    console.error('Erro ao atualizar preview:', error)
+  }
+})
 
-loadCharacters()
+clientChar.addEventListener('change', async () => {
+  try {
+    await updatePreviews()
+  } catch (error) {
+    console.error('Erro ao atualizar preview:', error)
+  }
+})
+
+form.disabled = true
+loadCharacters().then(() => {
+  form.disabled = false
+})
