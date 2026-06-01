@@ -3,6 +3,7 @@ from pathlib import Path
 from flask import Flask, jsonify, render_template, request, send_from_directory, abort
 
 from game_data import CHARACTERS
+from deck_optimizer import DeckOptimizer
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
@@ -193,6 +194,27 @@ def api_character_cards(char_id):
     return jsonify(_get_character_card_files(char_id, limit=10))
 
 
+@app.route("/api/optimized-deck/<int:char_id>", methods=["GET"])
+def api_optimized_deck(char_id):
+    if char_id not in CHARACTERS:
+        return jsonify({"error": "ID de personagem inválido."}), 400
+
+    if DECK_OPTIMIZER.model is None:
+        return jsonify({"error": "Modelo de otimização de baralho não está disponível."}), 500
+
+    deck, win_rate = DECK_OPTIMIZER.optimize_deck(char_id)
+    if deck is None:
+        return jsonify({"error": "Não foi possível gerar o baralho otimizado."}), 500
+
+    return jsonify({
+        "character": CHARACTERS[char_id],
+        "estimated_win_probability": win_rate,
+        "max_cards": 20,
+        "max_copies": 4,
+        "deck": DECK_OPTIMIZER.format_deck(char_id, deck),
+    })
+
+
 @app.route("/api/predict", methods=["POST"])
 def api_predict():
     data = request.get_json(silent=True)
@@ -224,6 +246,8 @@ def api_predict():
 
     return jsonify(prediction)
 
+
+DECK_OPTIMIZER = DeckOptimizer()
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
