@@ -14,35 +14,55 @@ y = df['winner_binary']
 
 # 2 - FEATURE ENGINEERING
 mask = (df['serverUserElo'] >= 1600) & (df['clientUserElo'] >= 1600)
-high_elo = df[mask]
+high_elo = df[mask].copy()
 
-server_wins = high_elo[high_elo['winner'] == -1].groupby('serverCharacter').size()
-server_total = high_elo.groupby('serverCharacter').size()
-client_wins = high_elo[high_elo['winner'] == 1].groupby('clientCharacter').size()
-client_total = high_elo.groupby('clientCharacter').size()
+high_elo['_server_expected'] = 1 / (1 + 10 ** ((high_elo['clientUserElo'] - high_elo['serverUserElo']) / 400))
+high_elo['_client_expected'] = 1 - high_elo['_server_expected']
 
-total_wins = server_wins.add(client_wins, fill_value=0)
-total_matches = server_total.add(client_total, fill_value=0)
-character_strength = (total_wins / total_matches).to_dict()
+server_actual = high_elo[high_elo['winner'] == -1].groupby('serverCharacter').size()
+server_expected = high_elo.groupby('serverCharacter')['_server_expected'].sum()
+client_actual = high_elo[high_elo['winner'] == 1].groupby('clientCharacter').size()
+client_expected = high_elo.groupby('clientCharacter')['_client_expected'].sum()
 
-print("Character Strength (win rate with ELO >= 1600):")
+total_actual = server_actual.add(client_actual, fill_value=0)
+total_expected = server_expected.add(client_expected, fill_value=0)
+
+BAYESIAN_PRIOR = 50
+character_strength = ((total_actual + BAYESIAN_PRIOR) / (total_expected + BAYESIAN_PRIOR)).to_dict()
+
+print("Character Strength (ELO-adjusted + Bayesian, ELO >= 1600):")
+print("  (>1.0 = ganha mais que o ELO preve, <1.0 = ganha menos)")
 for cid in sorted(character_strength.keys()):
     name = CHARACTERS.get(int(cid), f"Char {cid}")
-    print(f"  {name}: {character_strength[cid]:.2%}")
+    raw_wr = total_actual.get(cid, 0) / (total_actual.get(cid, 0) + total_expected.get(cid, 0)) if (total_actual.get(cid, 0) + total_expected.get(cid, 0)) > 0 else 0
+    print(f"  {name}: {character_strength[cid]:.4f}  (partidas: {int(total_actual.get(cid, 0) + (total_expected.get(cid, 0) - total_actual.get(cid, 0))):.0f})")
 
 df['serverCharStrength'] = df['serverCharacter'].map(character_strength)
 df['clientCharStrength'] = df['clientCharacter'].map(character_strength)
 
+df['elo_diff'] = df['serverUserElo'] - df['clientUserElo']
+df['strength_diff'] = df['serverCharStrength'] - df['clientCharStrength']
+
 cols = [
-    'serverUserElo',
-    'clientUserElo',
+    'elo_diff',
     'serverCharacter',
     'clientCharacter',
-    'serverCharStrength',
-    'clientCharStrength',
+    'strength_diff',
 ]
 
 x = df[cols]
+
+# Data augmentation: versao espelhada (server <-> client, winner invertido)
+x_mirror = x.copy()
+x_mirror['elo_diff'] = -x_mirror['elo_diff']
+x_mirror['strength_diff'] = -x_mirror['strength_diff']
+x_mirror[['serverCharacter', 'clientCharacter']] = x_mirror[['clientCharacter', 'serverCharacter']].values
+y_mirror = 1 - y
+
+x = pd.concat([x, x_mirror], ignore_index=True)
+y = pd.concat([y, y_mirror], ignore_index=True)
+
+print(f"Exemplos de treinamento (com augment): {len(x)} (original: {len(df)})")
 
 # 3 - TREINAR MODELO
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=100)
@@ -77,8 +97,11 @@ def predict_match_winner(server_rank, client_rank, server_char, client_char):
 
     server_char_strength = character_strength.get(server_char, default_strength)
     client_char_strength = character_strength.get(client_char, default_strength)
-    
-    features = [[server_rank, client_rank, server_char, client_char, server_char_strength, client_char_strength]]
+
+    elo_diff = server_rank - client_rank
+    strength_diff = server_char_strength - client_char_strength
+
+    features = [[elo_diff, server_char, client_char, strength_diff]]
     
     prediction = model.predict(features)[0]
     probability = model.predict_proba(features)[0]

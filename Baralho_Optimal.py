@@ -4,7 +4,10 @@ from collections import Counter
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-from game_data import CHARACTERS, CHAR_CARDS, get_card_name
+from game_data import (
+    CHARACTERS, CHAR_CARDS, get_card_name,
+    INTERNAL_CARD_INDEX, N_FEATURES, SKILL_SLOT,
+)
 import random
 
 random.seed(42)
@@ -17,17 +20,35 @@ df = pd.read_csv('data.csv')
 mask = (df['serverUserElo'] >= 1600) & (df['clientUserElo'] >= 1600)
 df_filtered = df[mask].copy()
 print(f"Partidas com ambos ELO >= 1600: {len(df_filtered)}")
+print(f"Total de features (IDs internos): {N_FEATURES}")
 
 df_filtered['winner_binary'] = (df_filtered['winner'] == -1).astype(int)
 
-# 2 - FEATURE ENGINEERING
-ALL_CARD_IDS = sorted(
-    {c for cards_set in CHAR_CARDS.values() for c in cards_set}
-)
-CARD_INDEX = {card_id: idx for idx, card_id in enumerate(ALL_CARD_IDS)}
-N_CARDS = len(ALL_CARD_IDS)
+# Coleta de decks reais e medias de composicao por personagem
+CHAR_REAL_DECKS = {cid: [] for cid in range(20)}
+char_sys_total = {cid: 0 for cid in range(20)}
+char_skill_total = {cid: 0 for cid in range(20)}
+char_spell_total = {cid: 0 for cid in range(20)}
+char_deck_count = {cid: 0 for cid in range(20)}
 
-print(f"Total de cartas unicas no dataset: {N_CARDS}")
+for _, row in df_filtered.iterrows():
+    s_char = int(row['serverCharacter'])
+    c_char = int(row['clientCharacter'])
+    s_cards = [int(c) for c in str(row['serverCards']).split('|') if c.isdigit()]
+    c_cards = [int(c) for c in str(row['clientCards']).split('|') if c.isdigit()]
+
+    for char_id, cards in [(s_char, s_cards), (c_char, c_cards)]:
+        CHAR_REAL_DECKS[char_id].append(cards)
+        char_sys_total[char_id] += sum(1 for c in cards if c <= 20)
+        char_skill_total[char_id] += sum(1 for c in cards if 100 <= c <= 114)
+        char_spell_total[char_id] += sum(1 for c in cards if c >= 200)
+        char_deck_count[char_id] += 1
+
+AVG_SYS_PCT = {cid: char_sys_total[cid] / max(1, 20 * char_deck_count[cid]) for cid in range(20)}
+AVG_SKILL_PCT = {cid: char_skill_total[cid] / max(1, 20 * char_deck_count[cid]) for cid in range(20)}
+AVG_SPELL_PCT = {cid: char_spell_total[cid] / max(1, 20 * char_deck_count[cid]) for cid in range(20)}
+
+PENALTY = 0.03
 
 
 def parse_card_counts(cards_str):
@@ -37,17 +58,32 @@ def parse_card_counts(cards_str):
 
 
 def cards_to_vector(char_id, card_counter):
-    vec = np.zeros(N_CARDS + 1, dtype=int)
+    vec = np.zeros(N_FEATURES + 4, dtype=int)
     vec[0] = char_id
+    total_system = 0
+    total_skill = 0
+    total_spell = 0
     for card_id, count in card_counter.items():
-        if card_id in CARD_INDEX:
-            vec[CARD_INDEX[card_id] + 1] = count
-    return vec
+        key = (char_id, card_id) if card_id > 20 else ('system', card_id)
+        if key in INTERNAL_CARD_INDEX:
+            vec[INTERNAL_CARD_INDEX[key] + 1] = count
+        if card_id <= 20:
+            total_system += count
+        elif card_id <= 114:
+            total_skill += count
+        else:
+            total_spell += count
+    vec[-3] = total_system
+    vec[-2] = total_skill
+    vec[-1] = total_spell
+    return vec, total_system, total_skill, total_spell
 
 
+# 2 - FEATURE ENGINEERING
 print("Construindo matriz de features...")
 X_rows = []
 y_rows = []
+weights = []
 
 for _, row in df_filtered.iterrows():
     s_char = int(row['serverCharacter'])
@@ -55,22 +91,30 @@ for _, row in df_filtered.iterrows():
     s_cards = parse_card_counts(row['serverCards'])
     c_cards = parse_card_counts(row['clientCards'])
 
-    X_rows.append(cards_to_vector(s_char, s_cards))
-    y_rows.append(row['winner_binary'])
+    s_vec, s_sys, s_skill, s_spell = cards_to_vector(s_char, s_cards)
+    c_vec, c_sys, c_skill, c_spell = cards_to_vector(c_char, c_cards)
 
-    X_rows.append(cards_to_vector(c_char, c_cards))
+    X_rows.append(s_vec)
+    y_rows.append(row['winner_binary'])
+    w_s = 1.0 + 3.0 * (s_skill / 20) + 3.0 * (s_spell / 20)
+    weights.append(w_s)
+
+    X_rows.append(c_vec)
     y_rows.append(1 - row['winner_binary'])
+    w_c = 1.0 + 3.0 * (c_skill / 20) + 3.0 * (c_spell / 20)
+    weights.append(w_c)
 
 X = np.array(X_rows)
 y = np.array(y_rows)
-
+weights = np.array(weights)
 print(f"Exemplos de treinamento: {len(X)}")
 
 # 3 - TREINAR MODELO
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test, w_train, w_test = train_test_split(
+    X, y, weights, test_size=0.2, random_state=42)
 
 model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
-model.fit(X_train, y_train)
+model.fit(X_train, y_train, sample_weight=w_train)
 
 y_pred = model.predict(X_test)
 acc = accuracy_score(y_test, y_pred)
@@ -85,42 +129,99 @@ MUTATION_RATE = 0.10
 ELITISM_COUNT = 10
 
 
+def get_slot_skills(char_id):
+    slots = {}
+    for (cid, card_id), slot in SKILL_SLOT.items():
+        if cid == char_id:
+            slots.setdefault(slot, []).append(card_id)
+    return slots
+
+
 def random_deck(char_id):
+    if CHAR_REAL_DECKS[char_id] and random.random() < 0.5:
+        deck = random.choice(CHAR_REAL_DECKS[char_id])[:]
+        available = sorted(CHAR_CARDS[char_id])
+        while len(deck) < 20:
+            deck.append(random.choice(available))
+        return deck[:20]
+
     available = sorted(CHAR_CARDS[char_id])
+    slot_skills = get_slot_skills(char_id)
+    system_spell_ids = [c for c in available if c <= 20 or c >= 200]
+
     deck = []
     counts = {}
-    for _ in range(20):
-        while True:
-            card = random.choice(available)
-            if counts.get(card, 0) < 4:
-                counts[card] = counts.get(card, 0) + 1
-                deck.append(card)
-                break
+
+    for skills in slot_skills.values():
+        card = random.choice(skills)
+        copies = random.randint(1, min(4, 20 - len(deck)))
+        for _ in range(copies):
+            deck.append(card)
+        counts[card] = copies
+
+    while len(deck) < 20:
+        card = random.choice(system_spell_ids)
+        if counts.get(card, 0) < 4:
+            deck.append(card)
+            counts[card] = counts.get(card, 0) + 1
+
     return deck
 
 
 def repair_deck(deck, char_id):
     counts = Counter(deck)
     available = sorted(CHAR_CARDS[char_id])
-    for card in list(deck):
-        if counts[card] > 4:
-            deck.remove(card)
-            counts[card] -= 1
-            while True:
-                c = random.choice(available)
-                if counts.get(c, 0) < 4:
-                    deck.append(c)
-                    counts[c] = counts.get(c, 0) + 1
-                    break
+    slot_skills = get_slot_skills(char_id)
+
+    slot_cards = {}
+    for card_id in list(deck):
+        key = (char_id, card_id)
+        if key in SKILL_SLOT:
+            slot = SKILL_SLOT[key]
+            if slot not in slot_cards:
+                slot_cards[slot] = set()
+            slot_cards[slot].add(card_id)
+
+    for slot, cards in slot_cards.items():
+        if len(cards) > 1:
+            keep = random.choice(list(cards))
+            for card_id in cards:
+                if card_id != keep:
+                    while card_id in deck:
+                        deck.remove(card_id)
+                        counts[card_id] -= 1
+
+    for card_id in list(deck):
+        if counts[card_id] > 4:
+            deck.remove(card_id)
+            counts[card_id] -= 1
+
+    while len(deck) < 20:
+        card = random.choice(available)
+        if counts.get(card, 0) < 4:
+            deck.append(card)
+            counts[card] = counts.get(card, 0) + 1
+
     return deck
 
 
 def mutate(deck, char_id):
     available = sorted(CHAR_CARDS[char_id])
-    for i in range(20):
+    slot_skills = get_slot_skills(char_id)
+
+    for i in range(len(deck)):
         if random.random() < MUTATION_RATE / 20:
             old = deck[i]
-            candidates = [c for c in available if c != old and deck.count(c) < 4]
+            key = (char_id, old)
+            if key in SKILL_SLOT:
+                slot = SKILL_SLOT[key]
+                candidates = [c for c in slot_skills[slot] if c != old and deck.count(c) < 4]
+                if not candidates:
+                    candidates = [c for c in available if c != old and deck.count(c) < 4
+                                  and ((char_id, c) not in SKILL_SLOT or deck.count(c) == 0)]
+            else:
+                candidates = [c for c in available if c != old and deck.count(c) < 4]
+
             if candidates:
                 deck[i] = random.choice(candidates)
     return deck
@@ -128,18 +229,39 @@ def mutate(deck, char_id):
 
 def decks_to_matrix(char_id, decks):
     n = len(decks)
-    mat = np.zeros((n, N_CARDS + 1), dtype=int)
+    mat = np.zeros((n, N_FEATURES + 4), dtype=int)
     mat[:, 0] = char_id
     for i, deck in enumerate(decks):
-        for c in deck:
-            if c in CARD_INDEX:
-                mat[i, CARD_INDEX[c] + 1] += 1
+        total_system = 0
+        total_skill = 0
+        total_spell = 0
+        for card_id in deck:
+            key = (char_id, card_id) if card_id > 20 else ('system', card_id)
+            if key in INTERNAL_CARD_INDEX:
+                mat[i, INTERNAL_CARD_INDEX[key] + 1] += 1
+            if card_id <= 20:
+                total_system += 1
+            elif card_id <= 114:
+                total_skill += 1
+            else:
+                total_spell += 1
+        mat[i, -3] = total_system
+        mat[i, -2] = total_skill
+        mat[i, -1] = total_spell
     return mat
 
 
 def evaluate_population(char_id, decks):
     mat = decks_to_matrix(char_id, decks)
     probs = model.predict_proba(mat)[:, 1]
+    for i, deck in enumerate(decks):
+        sys_cnt = sum(1 for c in deck if c <= 20)
+        skill_cnt = sum(1 for c in deck if 100 <= c <= 114)
+        spell_cnt = len(deck) - sys_cnt - skill_cnt
+        deviation = (abs(sys_cnt / 20 - AVG_SYS_PCT[char_id]) +
+                     abs(skill_cnt / 20 - AVG_SKILL_PCT[char_id]) +
+                     abs(spell_cnt / 20 - AVG_SPELL_PCT[char_id]))
+        probs[i] = max(0, min(1, probs[i] - PENALTY * deviation))
     return probs
 
 
@@ -150,8 +272,7 @@ def tournament_select(decks, scores, k=TOURNAMENT_K):
 
 
 def crossover(p1, p2):
-    child = [p1[i] if random.random() < 0.5 else p2[i] for i in range(20)]
-    return child
+    return [p1[i] if random.random() < 0.5 else p2[i] for i in range(20)]
 
 
 print("\n" + "=" * 70)

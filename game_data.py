@@ -46,6 +46,8 @@ SYSTEM_CARDS = {
 }
 
 CHAR_SKILL_CARDS = {
+    # ===== Reimu Hakurei (ID 0) =====
+    # ===== Reimu Hakurei (ID 0) =====
     0: {
         100: "Hakurei Amulet",
         101: "Cautionary Border",
@@ -60,6 +62,8 @@ CHAR_SKILL_CARDS = {
         110: "Instant Dimensional Rift",
         111: "Rain Dance",
     },
+    # ===== Marisa Kirisame (ID 1) =====
+    # ===== Marisa Kirisame (ID 1) =====
     1: {
         100: "Witch Leyline",
         101: "Miasma Sweep",
@@ -74,6 +78,8 @@ CHAR_SKILL_CARDS = {
         110: "Magic Reusable Bomb",
         111: "Green Spread",
     },
+    # ===== Sakuya Izayoi (ID 2) =====
+    # ===== Sakuya Izayoi (ID 2) =====
     2: {
         100: "Crossup Magic",
         101: "Bounce No-Bounce",
@@ -88,6 +94,8 @@ CHAR_SKILL_CARDS = {
         110: "Parallel Brain",
         111: "Time Paradox",
     },
+    # ===== Alice Margatroid (ID 3) =====
+    # ===== Alice Margatroid (ID 3) =====
     3: {
         100: "Doll Placement",
         101: "Volatile Doll",
@@ -102,6 +110,8 @@ CHAR_SKILL_CARDS = {
         110: "Doll Archers",
         111: "Seeker Wire",
     },
+    # ===== Patchouli Knowledge (ID 4) =====
+    # ===== Patchouli Knowledge (ID 4) =====
     4: {
         100: "Summer Red",
         101: "Winter Element",
@@ -119,6 +129,8 @@ CHAR_SKILL_CARDS = {
         113: "Force Lasher",
         114: "Diamond Hardness",
     },
+    # ===== Youmu Konpaku (ID 5) =====
+    # ===== Youmu Konpaku (ID 5) =====
     5: {
         100: "Netherworld Reflection Slash",
         101: "Crescent Moon Slash",
@@ -133,6 +145,8 @@ CHAR_SKILL_CARDS = {
         110: "Slashing a Flower Upon One's Head",
         111: "Strange Half-Body",
     },
+    # ===== Remilia Scarlet (ID 6) =====
+    # ===== Remilia Scarlet (ID 6) =====
     6: {
         100: "Demon Lord Walk",
         101: "Servant Flier",
@@ -147,6 +161,8 @@ CHAR_SKILL_CARDS = {
         110: "Vampire Kiss",
         111: "Stigmanizer",
     },
+    # ===== Yuyuko Saigyouji (ID 7) =====
+    # ===== Yuyuko Saigyouji (ID 7) =====
     7: {
         100: "Ghostly Butterfly",
         101: "Light of the Undead",
@@ -161,6 +177,8 @@ CHAR_SKILL_CARDS = {
         110: "Gifts to the Deceased",
         111: "Sense of Elegance",
     },
+    # ===== Yukari Yakumo (ID 8) =====
+    # ===== Yukari Yakumo (ID 8) =====
     8: {
         100: "Open, Lamented Box of Urashima",
         101: "Ghostly Butterfly Hidden in Zen Temple",
@@ -175,6 +193,8 @@ CHAR_SKILL_CARDS = {
         110: "Eye of Changes",
         111: "Wings of the Chimera",
     },
+    # ===== Suika Ibuki (ID 9) =====
+    # ===== Suika Ibuki (ID 9) =====
     9: {
         100: "Spectre -Dense-",
         101: "Gnome -Dense-",
@@ -189,6 +209,8 @@ CHAR_SKILL_CARDS = {
         110: "Ignis Fatuus",
         111: "Kidnapping Oni",
     },
+    # ===== Reisen Udongein Inaba (ID 10) =====
+    # ===== Reisen Udongein Inaba (ID 10) =====
     10: {
         100: "Mind Explosion",
         101: "Illusionary Blast",
@@ -203,6 +225,8 @@ CHAR_SKILL_CARDS = {
         110: "Undersense Break",
         111: "Acura Spectral",
     },
+    # ===== Aya Shameimaru (ID 11) =====
+    # ===== Aya Shameimaru (ID 11) =====
     11: {
         100: "Gust Fan",
         101: "Domination Dash",
@@ -217,6 +241,7 @@ CHAR_SKILL_CARDS = {
         110: "Tengu Drum",
         111: "Tengu's Pebbles",
     },
+    # ===== Komachi Onozuka (ID 12) =====
     12: {
         100: "Spirits of the Firm",
         101: "Bound Spirits of the Earth",
@@ -231,6 +256,7 @@ CHAR_SKILL_CARDS = {
         110: "Taste of Death",
         111: "Scythe of Exorcism",
     },
+    # ===== Iku Nagae (ID 13) =====
     13: {
         100: "Dragon Fish's Strike",
         101: "Veils like Water",
@@ -245,6 +271,7 @@ CHAR_SKILL_CARDS = {
         110: "Whiskers of the Dragon God",
         111: "Dragon's Eye",
     },
+    # ===== Tenshi Hinanawi (ID 14) =====
     14: {
         100: "Sword of the Earth",
         101: "Pillars of Divine Punishment",
@@ -259,6 +286,7 @@ CHAR_SKILL_CARDS = {
         110: "Scarlet Sword Temperament",
         111: "Sky Attack",
     },
+    # ===== Sanae Kochiya (ID 15) =====
     15: {
         100: "Win-DCall",
         101: "Omikuji Bomb",
@@ -273,6 +301,7 @@ CHAR_SKILL_CARDS = {
         110: "Sky-God Summon: Onbashira",
         111: "Earth-God Summon: Trap",
     },
+    # ===== Cirno (ID 16) =====
     16: {
         100: "Icicle Shot",
         101: "Midsummer Snowman",
@@ -287,6 +316,7 @@ CHAR_SKILL_CARDS = {
         110: "Frozen Technique",
         111: "Icicle Sword",
     },
+    # ===== Hong Meiling (ID 17) =====
     17: {
         100: "Spiral-Light Steps",
         101: "Red Cannon",
@@ -301,6 +331,7 @@ CHAR_SKILL_CARDS = {
         110: "Sky Dragon Kick",
         111: "Colorful Rain",
     },
+    # ===== Utsuho Reiuji (ID 18) =====
     18: {
         100: "Flare Up",
         101: "Ground Melt",
@@ -315,6 +346,7 @@ CHAR_SKILL_CARDS = {
         110: "Hell Wave Cannon",
         111: "Vengeful Nuclear Spirits",
     },
+    # ===== Suwako Moriya (ID 19) =====
     19: {
         100: "Ancient Geyser",
         101: "Toad God",
@@ -332,6 +364,7 @@ CHAR_SKILL_CARDS = {
 }
 
 CHAR_SPELL_CARDS = {
+    # ===== Reimu Hakurei (ID 0) =====
     0: {
         200: "Spirit Sign \"Fantasy Orb\"",
         201: "Divine Spirit \"Fantasy Seal\"",
@@ -344,6 +377,7 @@ CHAR_SPELL_CARDS = {
         214: "Divine Arts \"Wind God Kick\"",
         219: "\"Fantasy Heaven\"",
     },
+    # ===== Marisa Kirisame (ID 1) =====
     1: {
         200: "Love Sign \"Master Spark\"",
         202: "Magicannon \"Final Spark\"",
@@ -360,6 +394,7 @@ CHAR_SPELL_CARDS = {
         215: "Ritual Sign \"Orreries Sun\"",
         219: "Perversion \"Sure-Fire Master Spark\"",
     },
+    # ===== Sakuya Izayoi (ID 2) =====
     2: {
         200: "Illusion Sign \"Killing Doll\"",
         201: "Time Sign \"Private Square\"",
@@ -375,6 +410,7 @@ CHAR_SPELL_CARDS = {
         211: "Time Sign \"Imaginary Vertical Time\"",
         212: "Watch \"Luna Dial\"",
     },
+    # ===== Alice Margatroid (ID 3) =====
     3: {
         200: "Magic Sign \"Artful Sacrifice\"",
         201: "War Sign \"Little Legion\"",
@@ -389,6 +425,7 @@ CHAR_SPELL_CARDS = {
         210: "Lance Sign \"Cute Phalanx\"",
         211: "Dolls \"Lemmings' Parade\"",
     },
+    # ===== Patchouli Knowledge (ID 4) =====
     4: {
         200: "Fire Metal Sign \"St. Elmo's Pillar\"",
         201: "Earth Water Sign \"Noachian Deluge\"",
@@ -403,6 +440,7 @@ CHAR_SPELL_CARDS = {
         212: "Earth Metal Sign \"Emerald Megalopolis\"",
         213: "Sun Moon Sign \"Royal Diamond Ring\"",
     },
+    # ===== Youmu Konpaku (ID 5) =====
     5: {
         200: "Human Sign \"Slash of Present\"",
         201: "Life Ending Sword \"Meditation\"",
@@ -415,6 +453,7 @@ CHAR_SPELL_CARDS = {
         208: "Empty Perception \"6-root Cleansing\"",
         212: "Reincarnation Sword \"Sword of Cycles\"",
     },
+    # ===== Remilia Scarlet (ID 6) =====
     6: {
         200: "Scarlet Sign \"Red the Nightless Castle\"",
         201: "Critical \"Heart Break\"",
@@ -427,6 +466,7 @@ CHAR_SPELL_CARDS = {
         208: "\"Millenium Vampire\"",
         209: "Demon \"Remilia Stretch\"",
     },
+    # ===== Yuyuko Saigyouji (ID 7) =====
     7: {
         200: "Death Sign \"Ghastly Dream\"",
         201: "Nether Sign \"Passage to the Underworld\"",
@@ -440,6 +480,7 @@ CHAR_SPELL_CARDS = {
         209: "Cherry Sign \"Sense of Cherry Blossom\"",
         219: "\"Resurrection Butterflies\"",
     },
+    # ===== Yukari Yakumo (ID 8) =====
     8: {
         200: "Border Sign \"Quadruple Barrier\"",
         201: "Shikigami \"Ran Yakumo\"",
@@ -452,6 +493,7 @@ CHAR_SPELL_CARDS = {
         208: "Magic Eye \"The Magic Eye of Laplace\"",
         215: "Obsolete Line \"Trip to the Old Station\"",
     },
+    # ===== Suika Ibuki (ID 9) =====
     9: {
         200: "Gather Sign \"Throwing Mt. Togakushi\"",
         201: "Drunk Sign \"Art of Oni Binding\"",
@@ -464,6 +506,7 @@ CHAR_SPELL_CARDS = {
         208: "Oni Sign \"Massacre on Mt. Ooe\"",
         212: "Secret of Kings \"3-Step Destruction\"",
     },
+    # ===== Reisen Udongein Inaba (ID 10) =====
     10: {
         200: "Charming Look \"Corolla Vision\"",
         202: "Illusion Bomb \"Mind Starmine\"",
@@ -477,6 +520,7 @@ CHAR_SPELL_CARDS = {
         210: "Shortsight \"X-Wave\"",
         211: "Farsight \"Infrared Moon\"",
     },
+    # ===== Aya Shameimaru (ID 11) =====
     11: {
         200: "Whirl Sign \"Maple Leaf Fan\"",
         201: "Tornado \"Indication to the Divine\"",
@@ -489,6 +533,7 @@ CHAR_SPELL_CARDS = {
         211: "Demonic Beast \"Sickle Weasel Veiling\"",
         212: "Squall \"Sarutahiko's Guidance\"",
     },
+    # ===== Komachi Onozuka (ID 12) =====
     12: {
         200: "Nautical Sign \"Flow of the River\"",
         201: "Poor Fate \"Short Life Expectancy\"",
@@ -500,6 +545,7 @@ CHAR_SPELL_CARDS = {
         207: "Soul Sign \"Scythe of Wandering Spirits\"",
         211: "Hell \"Narrow Confines of Avici\"",
     },
+    # ===== Iku Nagae (ID 13) =====
     13: {
         200: "Electric Sign \"Thunder Drum Shot\"",
         201: "Fish Sign \"Dragonfish Drill\"",
@@ -512,6 +558,7 @@ CHAR_SPELL_CARDS = {
         210: "Dragonfish \"Swimming Oarfish Shot\"",
         211: "Orb Sign \"Orb of the Five-Clawed Dragon\"",
     },
+    # ===== Tenshi Hinanawi (ID 14) =====
     14: {
         200: "Earth Sign \"Sword of the Unletting Soil\"",
         201: "Non-perception \"Sword of Rapture\"",
@@ -524,6 +571,7 @@ CHAR_SPELL_CARDS = {
         208: "Swordplay \"Sword of Swagger\"",
         209: "Weather \"Scarlet Weather Pressure\"",
     },
+    # ===== Sanae Kochiya (ID 15) =====
     15: {
         200: "Prayer \"Charm of Good Commerce\"",
         201: "Esoterica \"Grey Thaumaturgy\"",
@@ -535,6 +583,7 @@ CHAR_SPELL_CARDS = {
         207: "Miracle \"Night of the Supernova Storm\"",
         210: "Esoterica \"9 Character Pierce\"",
     },
+    # ===== Cirno (ID 16) =====
     16: {
         200: "Ice Sign \"Icicle Machine Gun\"",
         201: "Frost Sign \"Frost Columns\"",
@@ -548,6 +597,7 @@ CHAR_SPELL_CARDS = {
         210: "Frozen Sign \"Freeze Atmosphere\"",
         213: "Cold Sign \"Insta-Freeze Beam\"",
     },
+    # ===== Hong Meiling (ID 17) =====
     17: {
         200: "Color Sign \"Colorful Windchime\"",
         201: "Ultimate Color \"Mad Colorful Dance\"",
@@ -561,6 +611,7 @@ CHAR_SPELL_CARDS = {
         209: "Brilliance \"Rainbow Brilliance Palm\"",
         211: "Chi Sign \"Fierce Tiger Energy Release\"",
     },
+    # ===== Utsuho Reiuji (ID 18) =====
     18: {
         200: "Explosion Sign \"Mega Flare\"",
         201: "Explosion Sign \"Giga Flare\"",
@@ -577,6 +628,7 @@ CHAR_SPELL_CARDS = {
         213: "Light Cover \"Nuclear Visor\"",
         214: "\"Abyss Nova\"",
     },
+    # ===== Suwako Moriya (ID 19) =====
     19: {
         200: "Native God \"Moriya God\"",
         201: "Spring Sign \"Moriya Clear Water\"",
@@ -593,27 +645,62 @@ CHAR_SPELL_CARDS = {
 }
 
 CHAR_CARDS = {
-    0: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,210,211,212,214,219},
-    1: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,210,211,212,214,215,219},
-    2: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,210,211,212,213,219},
-    3: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,210,211},
-    4: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,200,201,202,203,204,205,206,207,210,211,212,213},
-    5: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214},
-    6: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,210,211,213,215},
-    7: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,211,213,219},
-    8: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,210,211,215},
-    9: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,219},
-    10: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,210,211,212,214},
-    11: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,210,211,212,214,219},
-    12: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,210,211,212,213,215},
-    13: {0,1,2,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,210,211,212,213,215,219},
-    14: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209},
-    15: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,210,211},
-    16: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,210,212,213,214,215},
-    17: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,210,211,212,213},
-    18: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215},
-    19: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,100,101,102,103,104,105,106,107,108,109,110,111,200,201,202,203,204,205,206,207,208,209,210,211,212,213,219},
+    char_id: set(range(0, 21))
+              | set(CHAR_SKILL_CARDS.get(char_id, {}).keys())
+              | set(CHAR_SPELL_CARDS.get(char_id, {}).keys())
+    for char_id in range(20)
 }
+
+# Inputs das skills, extraidos do jogo (coluna Cost/Input)
+# Cada personagem tem 4 ou 5 inputs que se repetem a cada ciclo
+# Patchouli = 5 slots; Sanae corrigida manualmente (Wave-Call=236, Cobalt Spread=22)
+CHAR_SKILL_INPUTS = {
+    0:  ['236', '214', '421', '623'],            # Reimu
+    1:  ['214', '623', '22', '236'],             # Marisa
+    2:  ['623', '214', '236', '22'],             # Sakuya
+    3:  ['236', '623', '214', '22'],             # Alice
+    4:  ['236', '22', '623', '214', '421'],      # Patchouli (5 slots)
+    5:  ['236', '623', '214', '22'],             # Youmu
+    6:  ['236', '214', '623', '22'],             # Remilia
+    7:  ['214', '236', '421', '623'],            # Yuyuko
+    8:  ['236', '623', '214', '421'],            # Yukari
+    9:  ['236', '623', '214', '22'],             # Suika
+    10: ['236', '214', '623', '22'],             # Reisen
+    11: ['236', '214', '22', '421'],             # Aya
+    12: ['236', '623', '22', '214'],             # Komachi
+    13: ['236', '623', '22', '214'],             # Iku
+    14: ['214', '22', '236', '623'],             # Tenshi
+    15: ['236', '22', '623', '214'],             # Sanae (corrigido)
+    16: ['236', '214', '22', '623'],             # Cirno
+    17: ['214', '623', '22', '236'],             # Hong Meiling
+    18: ['623', '236', '22', '214'],             # Utsuho
+    19: ['214', '623', '236', '22'],             # Suwako
+}
+
+# Mapeia (char_id, card_id) -> slot (0-based)
+# Max 1 skill por slot = decks realistas
+SKILL_SLOT = {}
+for _cid, _inputs in CHAR_SKILL_INPUTS.items():
+    _n = len(_inputs)
+    _cards = sorted(CHAR_SKILL_CARDS.get(_cid, {}).keys())
+    for _i, _card_id in enumerate(_cards):
+        SKILL_SLOT[(_cid, _card_id)] = _i % _n
+
+# ID interno unico para cada carta: (char_id, card_id) -> indice no vetor de features
+INTERNAL_CARD_INDEX = {}
+_idx = 0
+for _card_id in range(0, 21):
+    INTERNAL_CARD_INDEX[('system', _card_id)] = _idx
+    _idx += 1
+for _char_id in range(20):
+    for _card_id in sorted(CHAR_SKILL_CARDS.get(_char_id, {}).keys()):
+        INTERNAL_CARD_INDEX[(_char_id, _card_id)] = _idx
+        _idx += 1
+    for _card_id in sorted(CHAR_SPELL_CARDS.get(_char_id, {}).keys()):
+        INTERNAL_CARD_INDEX[(_char_id, _card_id)] = _idx
+        _idx += 1
+
+N_FEATURES = len(INTERNAL_CARD_INDEX)
 
 
 def get_card_name(char_id, card_id):
