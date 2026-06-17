@@ -3,147 +3,63 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hisōtensoku Battle UI</title>
+    <title>Hisoutensoku Battle UI</title>
     <link rel="stylesheet" href="/static/css/style.css" />
   </head>
   <body>
     <div class="page-shell">
       <header class="hero card">
         <div class="hero-copy">
-          <span class="hero-label">Touhou Hisōtensoku</span>
+          <span class="hero-label">Touhou Hisoutensoku</span>
           <h1>Predict API com Tela de Batalha</h1>
-          <p>
-            Personagens em alta resolução com preview de cards de habilidade e
-            matchup visual inspirado em select screen.
-          </p>
-        </div>
-        <div class="hero-preview">
-          <div class="preview-card">
-            <img
-              id="preview-server-splash"
-              src="/character-image/0"
-              alt="Servidor"
-            />
-            <div class="preview-label">Servidor</div>
-            <div class="preview-name" id="preview-server-name">
-              Reimu Hakurei
-            </div>
-          </div>
-          <div class="battle-vs large">VS</div>
-          <div class="preview-card">
-            <img
-              id="preview-client-splash"
-              src="/character-image/1"
-              alt="Cliente"
-            />
-            <div class="preview-label">Cliente</div>
-            <div class="preview-name" id="preview-client-name">
-              Marisa Kirisame
-            </div>
-          </div>
+          <p>Selecione os personagens, monte os baralhos e veja a previsao de vitoria.</p>
         </div>
       </header>
 
-      <section class="grid-card">
-        <div class="form-panel card">
-          <h2>Configuração de Match</h2>
+      <section class="match-config card">
+        <div class="elo-row">
           <div class="field-row">
             <label for="server_rank">ELO do Servidor</label>
-            <input
-              id="server_rank"
-              name="server_rank"
-              type="number"
-              min="0"
-              value="1500"
-            />
+            <input id="server_rank" name="server_rank" type="number" min="0" value="1500" />
           </div>
           <div class="field-row">
             <label for="client_rank">ELO do Cliente</label>
-            <input
-              id="client_rank"
-              name="client_rank"
-              type="number"
-              min="0"
-              value="1500"
-            />
+            <input id="client_rank" name="client_rank" type="number" min="0" value="1500" />
           </div>
-          <div class="field-row">
-            <label for="server_char">Personagem do Servidor</label>
-            <select id="server_char" name="server_char"></select>
-          </div>
-          <div class="field-row">
-            <label for="client_char">Personagem do Cliente</label>
-            <select id="client_char" name="client_char"></select>
-          </div>
-          <button id="submit-button" type="button" class="btn-primary">
-            Prever vencedor
-          </button>
         </div>
 
-        <aside class="preview-panel card">
-          <div class="preview-heading">
-            <h2>Preview de Personagens</h2>
-            <p>
-              Escolha o seu personagem e veja as cartas de habilidade/encanto.
-            </p>
+        <div class="char-select-row">
+          <div class="char-pick" id="server-pick">
+            <img id="server-portrait" src="/character-image/0" alt="Servidor" />
+            <div class="char-pick-name" id="server-pick-name">Reimu Hakurei</div>
+            <div class="char-pick-role">Servidor</div>
           </div>
-          <div class="character-panel-grid">
-            <div class="character-panel">
-              <span class="character-role-label">Servidor</span>
-              <div class="character-card">
-                <img
-                  id="server-image"
-                  src="/character-image/0"
-                  alt="Servidor"
-                />
-                <div class="character-name" id="server-name">Reimu Hakurei</div>
-              </div>
-            </div>
-            <div class="character-panel">
-              <span class="character-role-label">Cliente</span>
-              <div class="character-card">
-                <img id="client-image" src="/character-image/1" alt="Cliente" />
-                <div class="character-name" id="client-name">
-                  Marisa Kirisame
-                </div>
-              </div>
-            </div>
+          <div class="battle-vs large">VS</div>
+          <div class="char-pick" id="client-pick">
+            <img id="client-portrait" src="/character-image/1" alt="Cliente" />
+            <div class="char-pick-name" id="client-pick-name">Marisa Kirisame</div>
+            <div class="char-pick-role">Cliente</div>
           </div>
+        </div>
 
-          <div class="cards-section">
-            <div class="cards-column">
-              <h3>Cartas do Servidor</h3>
-              <div class="cards-grid" id="server-cards"></div>
-              <div class="deck-suggestion">
-                <h4>Baralho otimizado</h4>
-                <div class="deck-list" id="server-optimized-deck">
-                  <p class="deck-loading">Carregando baralho otimizado...</p>
-                </div>
-              </div>
-            </div>
-            <div class="cards-column">
-              <h3>Cartas do Cliente</h3>
-              <div class="cards-grid" id="client-cards"></div>
-              <div class="deck-suggestion">
-                <h4>Baralho otimizado</h4>
-                <div class="deck-list" id="client-optimized-deck">
-                  <p class="deck-loading">Carregando baralho otimizado...</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </aside>
+        <button id="submit-button" type="button" class="btn-primary">Prever vencedor</button>
       </section>
+
+      <div class="deck-section-label"><h2>Baralhos</h2></div>
+      <div class="decks-outer">
+        <div class="deck-builder" id="server-deck-builder">
+          <div class="empty-cards">Carregando...</div>
+        </div>
+        <div class="deck-builder" id="client-deck-builder">
+          <div class="empty-cards">Carregando...</div>
+        </div>
+      </div>
 
       <section class="card result-card" id="result-card" hidden>
         <h2>Resultado da Partida</h2>
         <div class="matchup-banner">
           <div class="matchup-card">
-            <img
-              id="matchup-server-img"
-              src="/select-splash/0"
-              alt="Servidor"
-            />
+            <img id="matchup-server-img" src="/select-splash/0" alt="Servidor" />
             <div id="matchup-server-name">Reimu Hakurei</div>
           </div>
           <div class="battle-vs small">VS</div>
@@ -152,7 +68,6 @@
             <div id="matchup-client-name">Marisa Kirisame</div>
           </div>
         </div>
-
         <div class="result-grid">
           <div>
             <p class="result-label">Vencedor</p>
@@ -180,12 +95,16 @@
       <section class="card info-card">
         <h2>Como funciona</h2>
         <p>
-          O frontend envia a configuração de ELO e personagem para o backend
-          Flask. O backend usa um modelo treinado se houver
-          <code>data.csv</code>, caso contrário utiliza um fallback simples para
-          prever o vencedor.
+          Clique nos retratos para escolher os personagens. Monte os baralhos
+          com os controles abaixo de cada retrato. O backend usa RandomForest
+          treinado com partidas ELO &gt;= 1600 para prever o vencedor.
         </p>
       </section>
+    </div>
+
+    <div class="char-modal hidden" id="char-modal">
+      <div class="char-modal-bg"></div>
+      <div class="char-modal-grid" id="char-modal-grid"></div>
     </div>
 
     <script src="/static/js/predict.js"></script>

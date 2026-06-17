@@ -1,12 +1,8 @@
 ﻿const form = document.getElementById('submit-button')
-const serverChar = document.getElementById('server_char')
-const clientChar = document.getElementById('client_char')
-const serverImage = document.getElementById('server-image')
-const clientImage = document.getElementById('client-image')
-const serverName = document.getElementById('server-name')
-const clientName = document.getElementById('client-name')
-const previewServerSplash = document.getElementById('preview-server-splash')
-const previewClientSplash = document.getElementById('preview-client-splash')
+const serverPortrait = document.getElementById('server-portrait')
+const clientPortrait = document.getElementById('client-portrait')
+const serverPickName = document.getElementById('server-pick-name')
+const clientPickName = document.getElementById('client-pick-name')
 const matchupServerImg = document.getElementById('matchup-server-img')
 const matchupClientImg = document.getElementById('matchup-client-img')
 const matchupServerName = document.getElementById('matchup-server-name')
@@ -17,242 +13,329 @@ const serverProbText = document.getElementById('server-prob')
 const clientProbText = document.getElementById('client-prob')
 const matchupIndicator = document.getElementById('matchup-indicator')
 const modelTypeText = document.getElementById('model-type')
-const serverCards = document.getElementById('server-cards')
-const clientCards = document.getElementById('client-cards')
-const serverOptimizedDeck = document.getElementById('server-optimized-deck')
-const clientOptimizedDeck = document.getElementById('client-optimized-deck')
+const serverDeckContainer = document.getElementById('server-deck-builder')
+const clientDeckContainer = document.getElementById('client-deck-builder')
+const charModal = document.getElementById('char-modal')
+const charModalGrid = document.getElementById('char-modal-grid')
 
 let charactersList = []
+let serverCharId = 0
+let clientCharId = 1
+let serverDeck = {}
+let clientDeck = {}
+let serverCardsData = null
+let clientCardsData = null
+let activePicker = null
 
 async function loadCharacters() {
   const response = await fetch('/api/characters')
-  if (!response.ok) {
-    console.error('Falha ao carregar personagens')
-    alert('Falha ao carregar personagens. Recarregue a página.')
-    return
-  }
-
+  if (!response.ok) { console.error('Falha ao carregar personagens'); return }
   charactersList = await response.json()
-  charactersList.forEach((character) => {
-    const optionA = document.createElement('option')
-    optionA.value = character.id
-    optionA.textContent = character.name
-    serverChar.appendChild(optionA)
-
-    const optionB = document.createElement('option')
-    optionB.value = character.id
-    optionB.textContent = character.name
-    clientChar.appendChild(optionB)
-  })
-
-  serverChar.value = '0'
-  clientChar.value = '1'
-  await updatePreviews()
+  await updateAll()
 }
 
 function getCharacterById(id) {
-  return charactersList.find((character) => character.id === Number(id)) || null
+  return charactersList.find(c => c.id === Number(id)) || null
 }
 
-async function updateCardGrid(charId, container) {
-  if (!charId || !container) {
-    return
-  }
+function deckTotal(deck) { return Object.values(deck).reduce((sum, n) => sum + n, 0) }
 
-  const response = await fetch(`/api/character-cards/${charId}`)
-  if (!response.ok) {
-    container.innerHTML = ''
-    return
+function deckToVisual(deckObj) {
+  const slots = []
+  for (const [cid, count] of Object.entries(deckObj)) {
+    for (let i = 0; i < count; i++) slots.push(Number(cid))
   }
-
-  const cards = await response.json()
-  renderCards(cards, container)
+  while (slots.length < 20) slots.push(null)
+  return slots
 }
 
-function renderCards(cards, container) {
+function getCardImage(charId, card) {
+  return card.image_url || ''
+}
+
+async function loadCardsData(charId) {
+  const r = await fetch(`/api/character-cards-all/${charId}`)
+  if (r.ok) return await r.json()
+  return { system: [], skills: {}, spells: {} }
+}
+
+async function loadOptimizedAsDeck(charId, deckObj) {
+  const r = await fetch(`/api/optimized-deck/${charId}`)
+  if (r.ok) {
+    const data = await r.json()
+    for (const k in deckObj) delete deckObj[k]
+    data.deck.forEach(c => { deckObj[c.card_id] = c.count })
+  }
+}
+
+function renderDeckBuilder(container, charId, deckObj, cardsData) {
+  if (!cardsData) return
   container.innerHTML = ''
-  if (!cards.length) {
-    const empty = document.createElement('div')
-    empty.className = 'empty-cards'
-    empty.textContent = 'Nenhuma carta disponível'
-    container.appendChild(empty)
-    return
-  }
 
-  cards.forEach((card) => {
-    const item = document.createElement('div')
-    item.className = 'card-icon'
-    item.innerHTML = `
-      <img src="${card.url}" alt="${card.label}" title="${card.label}" />
-      <span>${card.label}</span>
-    `
-    container.appendChild(item)
+  const visual = document.createElement('div')
+  visual.className = 'deck-visual'
+  const slots = deckToVisual(deckObj)
+  slots.forEach(cardId => {
+    const slot = document.createElement('div')
+    slot.className = 'deck-slot'
+    if (cardId !== null) {
+      const allCards = [...(cardsData.system||[]), ...Object.values(cardsData.skills||{}).flat(), ...Object.values(cardsData.spells||{}).flat()]
+      const card = allCards.find(c => c.card_id === cardId)
+      if (card) {
+        slot.innerHTML = `<img src="${getCardImage(charId, card)}" alt="" onerror="this.style.display='none'" />`
+      }
+      slot.innerHTML += `<span class="slot-count">${deckObj[cardId] || 0}</span>`
+    }
+    visual.appendChild(slot)
+  })
+  container.appendChild(visual)
+
+  const title = document.createElement('div')
+  title.className = 'deck-title'
+  const total = deckTotal(deckObj)
+  title.innerHTML = `<span>${total}/20 cartas</span><strong class="${total===20?'total-ok':''}">${total===20?'Completo':''}</strong>`
+  container.appendChild(title)
+
+  renderSystemSection(container, cardsData.system || [], deckObj, charId)
+  renderSkillsSection(container, cardsData.skills || {}, deckObj, charId)
+  renderSpellsSection(container, cardsData.spells || {}, deckObj, charId)
+
+  const actions = document.createElement('div')
+  actions.className = 'deck-actions'
+  actions.innerHTML = `<button class="btn-deck btn-optimize">Usar otimizado</button><button class="btn-deck btn-clear">Limpar</button>`
+  container.appendChild(actions)
+
+  actions.querySelector('.btn-optimize').addEventListener('click', async () => {
+    const btn = actions.querySelector('.btn-optimize')
+    btn.disabled = true; btn.textContent = 'Carregando...'
+    await loadOptimizedAsDeck(charId, deckObj)
+    btn.disabled = false; btn.textContent = 'Usar otimizado'
+    renderDeckBuilder(container, charId, deckObj, cardsData)
+  })
+  actions.querySelector('.btn-clear').addEventListener('click', () => {
+    for (const k in deckObj) delete deckObj[k]
+    renderDeckBuilder(container, charId, deckObj, cardsData)
   })
 }
 
-async function updatePreviews() {
+function updateDeckCounts(container, charId, deckObj, cardsData) {
+  const total = deckTotal(deckObj)
+  const title = container.querySelector('.deck-title')
+  if (title) title.innerHTML = `<span>${total}/20 cartas</span><strong class="${total===20?'total-ok':''}">${total===20?'Completo':''}</strong>`
+
+  const visual = container.querySelector('.deck-visual')
+  if (visual) {
+    visual.innerHTML = ''
+    const slots = deckToVisual(deckObj)
+    slots.forEach(cardId => {
+      const slot = document.createElement('div')
+      slot.className = 'deck-slot'
+      if (cardId !== null) {
+        const allCards = [...(cardsData.system||[]), ...Object.values(cardsData.skills||{}).flat(), ...Object.values(cardsData.spells||{}).flat()]
+        const card = allCards.find(c => c.card_id === cardId)
+        if (card) slot.innerHTML = `<img src="${getCardImage(charId, card)}" alt="" onerror="this.style.display='none'" />`
+        slot.innerHTML += `<span class="slot-count">${deckObj[cardId] || 0}</span>`
+      }
+      visual.appendChild(slot)
+    })
+  }
+
+  container.querySelectorAll('.card-row').forEach(row => {
+    const cardId = Number(row.dataset.cardId)
+    const count = deckObj[cardId] || 0
+    const cntSpan = row.querySelector('.card-row-count')
+    if (cntSpan) cntSpan.textContent = count + 'x'
+    const minus = row.querySelectorAll('.btn-cnt')[0]
+    const plus = row.querySelectorAll('.btn-cnt')[1]
+    if (minus) minus.disabled = count <= 0
+    if (plus) plus.disabled = total >= 20 || count >= 4
+  })
+}
+
+function renderSystemSection(container, cards, deckObj, charId) {
+  if (!cards.length) return
+  const sec = document.createElement('details')
+  sec.className = 'card-group'
+  sec.innerHTML = `<summary>System (${cards.length})</summary>`
+  const list = document.createElement('div')
+  list.className = 'card-picks'
+  cards.forEach(c => list.appendChild(renderCardRow(c, deckObj, charId, container)))
+  sec.appendChild(list)
+  container.appendChild(sec)
+}
+
+function renderSkillsSection(container, skills, deckObj, charId) {
+  const inputs = Object.keys(skills).sort()
+  inputs.forEach(inp => {
+    const cards = skills[inp]
+    const sec = document.createElement('details')
+    sec.className = 'card-group'
+    sec.innerHTML = `<summary>Skill ${inp} (${cards.length})</summary>`
+    const list = document.createElement('div')
+    list.className = 'card-picks'
+    cards.forEach(c => list.appendChild(renderCardRow(c, deckObj, charId, container)))
+    sec.appendChild(list)
+    container.appendChild(sec)
+  })
+}
+
+function renderSpellsSection(container, spells, deckObj, charId) {
+  const costs = Object.keys(spells).sort((a,b) => Number(a)-Number(b))
+  costs.forEach(cost => {
+    const cards = spells[cost]
+    const sec = document.createElement('details')
+    sec.className = 'card-group'
+    sec.innerHTML = `<summary>Spell Cost ${cost} (${cards.length})</summary>`
+    const list = document.createElement('div')
+    list.className = 'card-picks'
+    cards.forEach(c => list.appendChild(renderCardRow(c, deckObj, charId, container)))
+    sec.appendChild(list)
+    container.appendChild(sec)
+  })
+}
+
+function renderCardRow(card, deckObj, charId, container) {
+  const row = document.createElement('div')
+  row.className = 'card-row'
+  row.dataset.cardId = card.card_id
+  const count = deckObj[card.card_id] || 0
+  const total = deckTotal(deckObj)
+  const canAdd = total < 20 && count < 4
+  const canRemove = count > 0
+  const imgSrc = getCardImage(charId, card)
+
+  row.innerHTML = `
+    <img class="card-row-icon" src="${imgSrc}" alt="" onerror="this.style.display='none'" />
+    <span class="card-row-name">${card.name}</span>
+    <span class="card-row-count">${count}x</span>
+    <button class="btn-cnt" ${canRemove?'':'disabled'}>-</button>
+    <button class="btn-cnt" ${canAdd?'':'disabled'}>+</button>
+  `
+
+  const [minus, plus] = row.querySelectorAll('.btn-cnt')
+  const cardsData = container === serverDeckContainer ? serverCardsData : clientCardsData
+
+  minus.addEventListener('click', () => {
+    const cur = deckObj[card.card_id] || 0
+    if (cur <= 0) return
+    deckObj[card.card_id] = cur - 1
+    if (deckObj[card.card_id] <= 0) delete deckObj[card.card_id]
+    updateDeckCounts(container, charId, deckObj, cardsData)
+  })
+  plus.addEventListener('click', () => {
+    const cur = deckObj[card.card_id] || 0
+    const tot = deckTotal(deckObj)
+    if (tot >= 20 || cur >= 4) return
+    deckObj[card.card_id] = cur + 1
+    updateDeckCounts(container, charId, deckObj, cardsData)
+  })
+
+  return row
+}
+
+async function updateChar(charId, isServer) {
+  const ch = getCharacterById(charId)
+  if (!ch) return
+  if (isServer) {
+    serverCharId = charId
+    serverPortrait.src = `/character-image/${charId}`
+    serverPickName.textContent = ch.name
+    matchupServerImg.src = `/select-splash/${charId}`
+    matchupServerName.textContent = ch.name
+  } else {
+    clientCharId = charId
+    clientPortrait.src = `/character-image/${charId}`
+    clientPickName.textContent = ch.name
+    matchupClientImg.src = `/select-splash/${charId}`
+    matchupClientName.textContent = ch.name
+  }
+}
+
+async function updateAll() {
   resultCard.hidden = true
 
-  const server = getCharacterById(serverChar.value)
-  const client = getCharacterById(clientChar.value)
+  updateChar(serverCharId, true)
+  updateChar(clientCharId, false)
 
-  const updateTasks = []
+  serverCardsData = await loadCardsData(serverCharId)
+  clientCardsData = await loadCardsData(clientCharId)
 
-  if (server) {
-    serverName.textContent = server.name
-    serverImage.src = `/character-image/${server.id}`
-    serverImage.alt = server.name
-    previewServerSplash.src = `/character-image/${server.id}`
-    previewServerSplash.alt = `${server.name} splash`
-    document.getElementById('preview-server-name').textContent = server.name
-    matchupServerImg.src = `/select-splash/${server.id}`
-    matchupServerImg.alt = `${server.name} splash`
-    matchupServerName.textContent = server.name
-    updateTasks.push(updateCardGrid(server.id, serverCards))
-    loadOptimizedDeck(server.id, serverOptimizedDeck).catch(() => {
-      renderDeck([], serverOptimizedDeck)
-    })
+  if (Object.keys(serverDeck).length === 0) {
+    await loadOptimizedAsDeck(serverCharId, serverDeck)
+  }
+  if (Object.keys(clientDeck).length === 0) {
+    await loadOptimizedAsDeck(clientCharId, clientDeck)
   }
 
-  if (client) {
-    clientName.textContent = client.name
-    clientImage.src = `/character-image/${client.id}`
-    clientImage.alt = client.name
-    previewClientSplash.src = `/character-image/${client.id}`
-    previewClientSplash.alt = `${client.name} splash`
-    document.getElementById('preview-client-name').textContent = client.name
-    matchupClientImg.src = `/select-splash/${client.id}`
-    matchupClientImg.alt = `${client.name} splash`
-    matchupClientName.textContent = client.name
-    updateTasks.push(updateCardGrid(client.id, clientCards))
-    loadOptimizedDeck(client.id, clientOptimizedDeck).catch(() => {
-      renderDeck([], clientOptimizedDeck)
-    })
-  }
+  renderDeckBuilder(serverDeckContainer, serverCharId, serverDeck, serverCardsData)
+  renderDeckBuilder(clientDeckContainer, clientCharId, clientDeck, clientCardsData)
+}
 
-  await Promise.all(updateTasks)
+function openCharPicker(isServer) {
+  activePicker = isServer
+  charModalGrid.innerHTML = ''
+  charactersList.forEach(ch => {
+    const pick = document.createElement('div')
+    pick.className = 'char-pick'
+    pick.innerHTML = `<img src="/character-image/${ch.id}" alt="${ch.name}" /><div class="char-pick-name">${ch.name}</div>`
+    pick.addEventListener('click', () => {
+      if (isServer) { serverCharId = ch.id; serverDeck = {} }
+      else { clientCharId = ch.id; clientDeck = {} }
+      charModal.classList.add('hidden')
+      updateAll()
+    })
+    charModalGrid.appendChild(pick)
+  })
+  charModal.classList.remove('hidden')
+}
+
+document.getElementById('server-pick').addEventListener('click', () => openCharPicker(true))
+document.getElementById('client-pick').addEventListener('click', () => openCharPicker(false))
+document.querySelector('.char-modal-bg').addEventListener('click', () => charModal.classList.add('hidden'))
+
+function deckToList(deckObj) {
+  const lst = []
+  for (const [cid, count] of Object.entries(deckObj)) {
+    for (let i = 0; i < count; i++) lst.push(Number(cid))
+  }
+  return lst
 }
 
 function getMatchupIndicator(probability) {
-  if (probability >= 0.62) {
-    return 'Advantage Server'
-  }
-  if (probability <= 0.38) {
-    return 'Advantage Client'
-  }
+  if (probability >= 0.62) return 'Advantage Server'
+  if (probability <= 0.38) return 'Advantage Client'
   return 'Neutral'
-}
-
-function renderDeck(deck, container) {
-  container.innerHTML = ''
-  if (!Array.isArray(deck) || !deck.length) {
-    const empty = document.createElement('div')
-    empty.className = 'empty-cards'
-    empty.textContent = 'Baralho otimizado não disponível.'
-    container.appendChild(empty)
-    return
-  }
-
-  const list = document.createElement('ul')
-  list.className = 'deck-list-items'
-  deck.forEach((card) => {
-    const item = document.createElement('li')
-    item.textContent = `${card.count}× ${card.name}`
-    list.appendChild(item)
-  })
-  container.appendChild(list)
-}
-
-async function loadOptimizedDeck(charId, container) {
-  if (!charId || !container) {
-    return
-  }
-
-  container.innerHTML = '<p class="deck-loading">Carregando baralho otimizado...</p>'
-
-  const response = await fetch(`/api/optimized-deck/${charId}`)
-  if (!response.ok) {
-    container.innerHTML = ''
-    renderDeck([], container)
-    return
-  }
-
-  const data = await response.json()
-  renderDeck(data.deck || [], container)
 }
 
 function showResult(result) {
   winnerText.textContent = result.winner === 'server' ? 'Servidor' : 'Cliente'
   serverProbText.textContent = `${(result.server_win_probability * 100).toFixed(1)}%`
   clientProbText.textContent = `${(result.client_win_probability * 100).toFixed(1)}%`
-  matchupIndicator.textContent = getMatchupIndicator(
-    result.server_win_probability,
-  )
-  modelTypeText.textContent =
-    result.model === 'trained' ? 'Modelo treinado' : 'Fallback'
+  matchupIndicator.textContent = result.matchup || 'N/A'
+  const models = { deck: 'Modelo com deck', trained: 'Modelo treinado', fallback: 'Fallback' }
+  modelTypeText.textContent = models[result.model] || result.model
   resultCard.hidden = false
 }
 
 form.addEventListener('click', async (event) => {
   event.preventDefault()
   form.disabled = true
-
   try {
-    const server = getCharacterById(serverChar.value)
-    const client = getCharacterById(clientChar.value)
-
-    if (!server || !client) {
-      alert('Selecione personagens válidos.')
-      return
-    }
-
-    updatePreviews()
-
     const payload = {
       server_rank: Number(document.getElementById('server_rank').value),
       client_rank: Number(document.getElementById('client_rank').value),
-      server_char: Number(serverChar.value),
-      client_char: Number(clientChar.value),
+      server_char: serverCharId,
+      client_char: clientCharId,
+      server_cards: deckToList(serverDeck),
+      client_cards: deckToList(clientDeck),
     }
-
-    const response = await fetch('/api/predict', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-
+    const response = await fetch('/api/predict', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) })
     const data = await response.json()
-    if (!response.ok) {
-      alert(data.error || 'Erro ao calcular previsão.')
-      return
-    }
-
+    if (!response.ok) { alert(data.error || 'Erro'); return }
     showResult(data)
-  } catch (error) {
-    console.error('Erro na previsão:', error)
-    alert('Erro ao processar previsão. Tente novamente.')
-  } finally {
-    form.disabled = false
-  }
-})
-
-serverChar.addEventListener('change', async () => {
-  try {
-    await updatePreviews()
-  } catch (error) {
-    console.error('Erro ao atualizar preview:', error)
-  }
-})
-
-clientChar.addEventListener('change', async () => {
-  try {
-    await updatePreviews()
-  } catch (error) {
-    console.error('Erro ao atualizar preview:', error)
-  }
+  } catch (error) { console.error(error); alert('Erro ao processar previsao.') }
+  finally { form.disabled = false }
 })
 
 form.disabled = true
-loadCharacters().then(() => {
-  form.disabled = false
-})
+loadCharacters().then(() => { form.disabled = false })

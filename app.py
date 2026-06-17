@@ -2,51 +2,37 @@
 from pathlib import Path
 from flask import Flask, jsonify, render_template, request, send_from_directory, abort
 
-from game_data import CHARACTERS
-from deck_optimizer import DeckOptimizer
+from game_data import (
+    CHARACTERS, SYSTEM_CARDS, CHAR_SKILL_CARDS, CHAR_SPELL_CARDS, CHAR_CARDS,
+    get_card_name, get_spell_cost, get_skill_input, CHAR_SKILL_INPUTS,
+)
+from Baralho_Optimal import predict_match as predict_fn, random_deck as deck_random_deck
+import joblib
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
+
+character_strength = {}
+_csp = Path(__file__).parent / "models" / "character_strength.pkl"
+if _csp.exists():
+    character_strength = joblib.load(_csp)
 
 VISUALS_CHARACTER_DIR = Path(__file__).parent / "Visuais" / "09b_character"
 VISUALS_SELECT_DIR = Path(__file__).parent / "Visuais" / "05a_selcha"
 VISUALS_CARD_DIR = Path(__file__).parent / "Visuais" / "card"
-DATA_FILE = Path(__file__).parent / "data.csv"
 
 CHARACTER_IMAGE_FOLDERS = {
-    0: "reimu",
-    1: "marisa",
-    2: "sakuya",
-    3: "alice",
-    4: "patchouli",
-    5: "youmu",
-    6: "remilia",
-    7: "yuyuko",
-    8: "yukari",
-    9: "suika",
-    10: "Reisen",
-    11: "aya",
-    12: "komachi",
-    13: "iku",
-    14: "tenshi",
-    15: "sanae",
-    16: "Cirno",
-    17: "Meiling",
-    18: "utsuho",
-    19: "suwako",
+    0: "reimu", 1: "marisa", 2: "sakuya", 3: "alice", 4: "patchouli",
+    5: "youmu", 6: "remilia", 7: "yuyuko", 8: "yukari", 9: "suika",
+    10: "Reisen", 11: "aya", 12: "komachi", 13: "iku", 14: "tenshi",
+    15: "sanae", 16: "Cirno", 17: "Meiling", 18: "utsuho", 19: "suwako",
 }
-
-MODEL = None
-MODEL_TYPE = "fallback"
-
 
 def _find_image_file(directory: Path, pattern: str):
     if not directory.exists():
         return None, None
-
     matches = sorted(directory.glob(pattern))
     if not matches:
         return None, None
-
     return directory, matches[0].name
 
 
@@ -66,17 +52,14 @@ def _get_character_card_files(char_id, limit=8):
     folder_name = CHARACTER_IMAGE_FOLDERS.get(char_id)
     if not folder_name:
         return []
-
     character_dir = VISUALS_CARD_DIR / folder_name
     if not character_dir.exists():
         return []
-
     cards = []
     for group in ["skill", "spell"]:
         group_dir = character_dir / group
         if not group_dir.exists():
             continue
-
         for file in sorted(group_dir.glob("*.png")):
             cards.append({
                 "type": group,
@@ -88,66 +71,30 @@ def _get_character_card_files(char_id, limit=8):
                 break
         if len(cards) >= limit:
             break
-
     return cards
 
 
-def _train_model():
-    global MODEL, MODEL_TYPE
-    if not DATA_FILE.exists():
-        return
+def _get_card_categories(char_id):
+    system = []
+    skills_by_input = {}
+    spells_by_cost = {}
 
-    try:
-        import pandas as pd
-        from sklearn.linear_model import LogisticRegression
+    for card_id in sorted(CHAR_CARDS.get(char_id, set())):
+        name = get_card_name(char_id, card_id)
+        safe = name.replace(' ', '_').replace('"', '')
+        if card_id <= 20:
+            img = f"/card-image/common/card{card_id:03d}_{safe}.png"
+            system.append({"card_id": card_id, "name": name, "image_url": img})
+        elif 100 <= card_id <= 114:
+            inp = get_skill_input(char_id, card_id)
+            img = f"/card-image/{char_id}/skill/card{card_id}_{safe}.png"
+            skills_by_input.setdefault(inp, []).append({"card_id": card_id, "name": name, "image_url": img})
+        elif card_id >= 200:
+            cost = get_spell_cost(char_id, card_id)
+            img = f"/card-image/{char_id}/spell/card{card_id}_{safe}.png"
+            spells_by_cost.setdefault(str(cost), []).append({"card_id": card_id, "name": name, "image_url": img})
 
-        dataset = pd.read_csv(DATA_FILE)
-        required = ["server_rank", "client_rank", "server_char", "client_char", "winner"]
-        if not all(col in dataset.columns for col in required):
-            return
-
-        X = dataset[["server_rank", "client_rank", "server_char", "client_char"]].astype(int)
-        y = dataset["winner"].apply(lambda value: 1 if str(value).strip().lower() == "server" else 0)
-
-        model = LogisticRegression(max_iter=1000)
-        model.fit(X, y)
-
-        MODEL = model
-        MODEL_TYPE = "trained"
-    except Exception:
-        MODEL = None
-        MODEL_TYPE = "fallback"
-
-
-def _predict_with_model(server_rank, client_rank, server_char, client_char):
-    if MODEL is None:
-        return None
-
-    import numpy as np
-
-    X = [[server_rank, client_rank, server_char, client_char]]
-    proba = MODEL.predict_proba(X)[0][1]
-    proba = float(max(min(proba, 0.95), 0.05))
-    return {
-        "winner": "server" if proba >= 0.5 else "client",
-        "server_win_probability": proba,
-        "client_win_probability": 1.0 - proba,
-        "model": MODEL_TYPE,
-    }
-
-
-def _fallback_predict(server_rank, client_rank, server_char, client_char):
-    diff = float(server_rank - client_rank)
-    score = 0.5 + max(min(diff / 1000.0, 0.2), -0.2)
-    score += (client_char - server_char) * 0.003
-    score = min(max(score, 0.06), 0.94)
-
-    return {
-        "winner": "server" if score >= 0.5 else "client",
-        "server_win_probability": score,
-        "client_win_probability": 1.0 - score,
-        "model": MODEL_TYPE,
-    }
+    return {"system": system, "skills": skills_by_input, "spells": spells_by_cost}
 
 
 @app.route("/")
@@ -176,11 +123,17 @@ def card_image(char_id, card_type, filename):
     folder_name = CHARACTER_IMAGE_FOLDERS.get(char_id)
     if not folder_name or card_type not in {"skill", "spell"}:
         abort(404)
-
     folder = VISUALS_CARD_DIR / folder_name / card_type
     if not folder.exists():
         abort(404)
+    return send_from_directory(str(folder), filename)
 
+
+@app.route("/card-image/common/<path:filename>")
+def card_image_common(filename):
+    folder = VISUALS_CARD_DIR / "common"
+    if not folder.exists():
+        abort(404)
     return send_from_directory(str(folder), filename)
 
 
@@ -194,24 +147,62 @@ def api_character_cards(char_id):
     return jsonify(_get_character_card_files(char_id, limit=10))
 
 
+@app.route("/api/character-cards-all/<int:char_id>", methods=["GET"])
+def api_character_cards_all(char_id):
+    if char_id not in CHARACTERS:
+        return jsonify({"error": "ID inválido"}), 400
+    return jsonify(_get_card_categories(char_id))
+
+
 @app.route("/api/optimized-deck/<int:char_id>", methods=["GET"])
 def api_optimized_deck(char_id):
     if char_id not in CHARACTERS:
         return jsonify({"error": "ID de personagem inválido."}), 400
+    if deck_random_deck is None:
+        return jsonify({"error": "Modelo de baralho indisponível."}), 500
 
-    if DECK_OPTIMIZER.model is None:
-        return jsonify({"error": "Modelo de otimização de baralho não está disponível."}), 500
+    from collections import Counter
+    import random
+    from Baralho_Optimal import (
+        evaluate_population, random_deck, repair_deck, mutate,
+        tournament_select, crossover,
+    )
 
-    deck, win_rate = DECK_OPTIMIZER.optimize_deck(char_id)
-    if deck is None:
-        return jsonify({"error": "Não foi possível gerar o baralho otimizado."}), 500
+    POP_SIZE = 20
+    GENERATIONS = 10
+    ELITISM_COUNT = 3
+
+    population = [random_deck(char_id) for _ in range(POP_SIZE)]
+    for _ in range(GENERATIONS):
+        scores = evaluate_population(char_id, population)
+        ranked = sorted(zip(scores, population), key=lambda x: x[0], reverse=True)
+        new_pop = [d for _, d in ranked[:ELITISM_COUNT]]
+        while len(new_pop) < POP_SIZE:
+            if random.random() < 0.7:
+                p1 = tournament_select(population, scores)
+                p2 = tournament_select(population, scores)
+                child = crossover(p1, p2)
+            else:
+                child = tournament_select(population, scores)
+            child = repair_deck(mutate(child, char_id), char_id)
+            new_pop.append(child)
+        population = new_pop
+
+    final_scores = evaluate_population(char_id, population)
+    best_idx = max(range(len(final_scores)), key=lambda i: final_scores[i])
+    best_deck = population[best_idx]
+    best_prob = float(final_scores[best_idx])
+
+    counts = Counter(best_deck)
+    formatted = [{"card_id": cid, "name": get_card_name(char_id, cid), "count": n}
+                 for cid, n in sorted(counts.items())]
 
     return jsonify({
         "character": CHARACTERS[char_id],
-        "estimated_win_probability": win_rate,
+        "estimated_win_probability": best_prob,
         "max_cards": 20,
         "max_copies": 4,
-        "deck": DECK_OPTIMIZER.format_deck(char_id, deck),
+        "deck": formatted,
     })
 
 
@@ -231,23 +222,42 @@ def api_predict():
         client_rank = int(data["client_rank"])
         server_char = int(data["server_char"])
         client_char = int(data["client_char"])
+        server_cards = data.get("server_cards", [])
+        client_cards = data.get("client_cards", [])
     except (ValueError, TypeError):
-        return jsonify({"error": "Valores inválidos. ELO e IDs devem ser inteiros."}), 400
+        return jsonify({"error": "Valores inválidos."}), 400
 
     if server_char not in CHARACTERS or client_char not in CHARACTERS:
         return jsonify({"error": "ID de personagem inválido."}), 400
 
-    if MODEL is None and DATA_FILE.exists():
-        _train_model()
+    if predict_fn is not None and server_cards and client_cards:
+        result = predict_fn(server_rank, client_rank, server_char, client_char,
+                            server_cards, client_cards)
+    elif predict_fn is not None:
+        if not server_cards:
+            server_cards = deck_random_deck(server_char)
+        if not client_cards:
+            client_cards = deck_random_deck(client_char)
+        result = predict_fn(server_rank, client_rank, server_char, client_char,
+                            server_cards, client_cards)
+    else:
+        return jsonify({"error": "Modelo indisponivel."}), 500
 
-    prediction = _predict_with_model(server_rank, client_rank, server_char, client_char)
-    if prediction is None:
-        prediction = _fallback_predict(server_rank, client_rank, server_char, client_char)
+    ss = character_strength.get(server_char, 1.0)
+    cs = character_strength.get(client_char, 1.0)
+    if ss > cs * 1.005:
+        matchup = "Favorece Servidor"
+    elif cs > ss * 1.005:
+        matchup = "Favorece Cliente"
+    else:
+        matchup = "Equilibrado"
 
-    return jsonify(prediction)
+    return jsonify({"winner": result["winner"],
+                     "server_win_probability": result["server_win_probability"],
+                     "client_win_probability": result["client_win_probability"],
+                     "model": "deck",
+                     "matchup": matchup})
 
-
-DECK_OPTIMIZER = DeckOptimizer()
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000, use_reloader=False)
