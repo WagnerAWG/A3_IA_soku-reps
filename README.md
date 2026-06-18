@@ -19,3 +19,8 @@ https://drive.google.com/file/d/1CdNEDXCzDQ3fsvZsPj6d4IBTW1wvcETL/view?usp=drive
    ```
 
 A aplicação oferece um formulário web para enviar ELO e personagens e receber a previsão do vencedor via `/api/predict`.
+
+
+##comandos para criar o ambiente virtual 
+python3.14 -m venv .venv 
+source .venv/bin/activate
